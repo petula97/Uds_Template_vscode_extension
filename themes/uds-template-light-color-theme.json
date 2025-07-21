@@ -1,0 +1,18 @@
+{
+    "name": "UDS Template Light",
+    "type": "light",
+    "colors": {},
+    "tokenColors": [
+      { "scope": "comment.line.hidden.uds-template", "settings": { "foreground": "#008000", "fontStyle": "italic" } },
+      { "scope": "comment.line.inline.uds-template", "settings": { "foreground": "#A0A0A0" } },
+      { "scope": "comment.line.log.uds-template", "settings": { "foreground": "#B8860B" } },
+      { "scope": "comment.line.logheader.uds-template", "settings": { "foreground": "#FF8C00", "fontStyle": "bold" } },
+      { "scope": "support.function.canape.uds-template", "settings": { "foreground": "#800080" } },
+      { "scope": "variable.parameter.ini.uds-template", "settings": { "foreground": "#007ACC" } },
+      { "scope": "variable.parameter.expected.uds-template", "settings": { "foreground": "#D2691E", "fontStyle": "bold" } },
+      { "scope": "variable.parameter.postprocess.uds-template", "settings": { "foreground": "#1E90FF" } },
+      { "scope": "constant.numeric.uds-service.uds-template", "settings": { "foreground": "#B22222" } },
+      { "scope": "keyword.control.section.uds-template", "settings": { "foreground": "#00008B" } },
+      { "scope": "string.quoted.value.uds-template", "settings": { "foreground": "#A0522D" } }
+    ]
+  }
