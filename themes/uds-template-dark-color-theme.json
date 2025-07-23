@@ -13,7 +13,12 @@
       { "scope": "variable.parameter.postprocess.uds-template", "settings": { "foreground": "#9CDCFE" } },
       { "scope": "constant.numeric.uds-service.uds-template", "settings": { "foreground": "#D16969" } },
       { "scope": "keyword.control.section.uds-template", "settings": { "foreground": "#569CD6" } },
-      { "scope": "string.quoted.value.uds-template", "settings": { "foreground": "#CE9178" } }
+      { "scope": "string.quoted.value.uds-template", "settings": { "foreground": "#CE9178" } },
+      { "scope": "keyword.control.conditional.if.uds-template", "settings": { "foreground": "#adf030", "fontStyle": "bold" } },
+      { "scope": "keyword.control.conditional.endif.uds-template", "settings": { "foreground": "#adf030", "fontStyle": "bold" } },
+      { "scope": "keyword.control.conditional.elseif.uds-template", "settings": { "foreground": "#adf030", "fontStyle": "bold" } },
+      { "scope": "keyword.control.conditional.elif.uds-template", "settings": { "foreground": "#adf030", "fontStyle": "bold" } },
+      { "scope": "keyword.control.conditional.else.uds-template", "settings": { "foreground": "#adf030", "fontStyle": "bold" } }
     ]
   }
 

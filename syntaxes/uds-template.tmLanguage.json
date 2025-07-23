@@ -1,57 +1,135 @@
 {
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "uds-template",
   "scopeName": "source.uds-template",
   "patterns": [
-    {
-      "match": "^\\s*#>#.*$",
-      "name": "comment.line.logheader.uds-template"
+    { "include": "#comments-hash" },
+    { "include": "#comments-hash-log" },
+    { "include": "#comments-hash-header" },
+    { "include": "#comments-semicolon" },
+    { "include": "#canape-commands" },
+    { "include": "#expected-ini-patterns" },
+    { "include": "#keywords-values" },
+    { "include": "#uds-service-values" },
+    { "include": "#if-block" }
+  ],
+  "repository": {
+    "comments-hash": {
+      "begin": "#(?!!|>#|>#>)",
+      "end": "$",
+      "name": "comment.line.hash.uds-template",
+      "patterns": [
+        { "include": "#expected-ini-patterns" },
+        { "include": "#keywords-values" }
+      ]
     },
-    {
-      "match": "^\\s*#>.*$",
-      "name": "comment.line.log.uds-template"
+    "comments-hash-log": {
+      "begin": "#>+",
+      "end": "$",
+      "name": "comment.line.hash-log.uds-template",
+      "patterns": [
+        { "include": "#expected-ini-patterns" },
+        { "include": "#keywords-values" }
+      ]
     },
-    {
-      "match": "^\\s*#.*$",
-      "name": "comment.line.hidden.uds-template"
+    "comments-hash-header": {
+      "begin": "#>#+",
+      "end": "$",
+      "name": "comment.line.hash-header.uds-template",
+      "patterns": [
+          { "include": "#expected-ini-patterns" },
+          { "include": "#keywords-values" }
+      ]
     },
-    {
-      "match": ";.*$",
-      "name": "comment.line.inline.uds-template"
+    "comments-semicolon": {
+      "begin": ";(?!!)",
+      "end": "$",
+      "name": "comment.line.semicolon.uds-template",
+      "patterns": [
+        { "include": "#expected-ini-patterns" },
+        { "include": "#keywords-values" }
+      ]
     },
-    {
-      "match": "!\\b(?:prog|set|baud|activate|canalyzer|canid|sa)\\b\\s*\\([^)]*\\)",
-      "name": "support.function.canape.uds-template"
+    "canape-commands": {
+      "patterns": [
+        {
+          "name": "support.function.canape.uds-template",
+          "match": "!\\b(prog|set|baud|activate|canalyzer|canid|sa|batch|auth|sleep|append)\\b(?=\\()"
+        },
+        { "include": "#keywords-values" }
+      ]
     },
-    {
-      "match": "\\@\\([^)]+\\)",
-      "name": "variable.parameter.ini.uds-template"
+    "expected-ini-patterns": {
+      "patterns": [
+        {
+          "name": "keyword.control.expected.uds-template",
+          "match": "\\$\\b(EXPECTED)\\b(?=\\()"
+        }
+      ]
     },
-    {
-      "match": "\\$EXPECTED\\([^)]*\\)",
-      "name": "variable.parameter.expected.uds-template"
+    "keywords-values":{
+        "patterns": [
+        {
+            "name": "keyword.other.ini-reference.uds-template",
+            "match": "@\\([^)]*\\)"
+        },
+            {
+            "name": "keyword.other.ini-postprocess.uds-template",
+            "match": "\\$\\([^()]*\\)"
+        }
+        ]
+            
     },
-    {
-      "match": "\\$\\([^)]+\\)",
-      "name": "variable.parameter.postprocess.uds-template"
+    "uds-service-values": {
+      "patterns": [
+        {
+          "name": "constant.numeric.uds-service.uds-template",
+          "match": "\\b(?:[0-9A-Fa-f]{2}|@\\([^()]+\\))(?:,(?:[0-9A-Fa-f]{2}|@\\([^()]+\\)))+(?=\\s)"
+        },
+        {
+          "name": "constant.numeric.uds-service.uds-template",
+          "match": "\\b(?:[0-9A-Fa-f]{2}){2,}(?=\\s)"
+        },
+        { "include": "#keywords-values" }
+      ]
     },
-    {
-      "match": "\\$\\@\\([^)]+\\)",
-      "name": "variable.parameter.postprocessini.uds-template"
-    },
-    {
-      "match": "\\b(?:27|10|11|34|36|31|22|2E|23|24|14|19|3E)(?:,\\s*[0-9A-Fa-f]{2})*\\b",
-      "name": "constant.numeric.uds-service.uds-template"
-    },
-    {
-      "match": "^\\s*\\[.*?\\]",
-      "name": "keyword.control.section.uds-template"
-    },
-    {
-      "match": "^\\s*[^=\\s]+(?=\\s*=)",
-      "name": "variable.parameter.key.uds-template"
-    },
-    {
-      "match": "=\\s*.*$",
-      "name": "string.quoted.value.uds-template"
+    "if-block": {
+      "begin": "^\\s*@IF\\b.*$",
+      "beginCaptures": {
+        "0": {
+          "name": "keyword.control.conditional.if.uds-template"
+        }
+      },
+      "end": "^\\s*@ENDIF\\b.*$",
+      "endCaptures": {
+        "0": {
+          "name": "keyword.control.conditional.endif.uds-template"
+        }
+      },
+      "patterns": [
+        {
+          "match": "^\\s*@ELIF\\b.*$",
+          "name": "keyword.control.conditional.elif.uds-template"
+        },
+        {
+          "match": "^\\s*@ELSE\\b.*$",
+          "name": "keyword.control.conditional.else.uds-template"
+        },
+        { "include": "#comments-hash" },
+        { "include": "#comments-hash-log" },
+        { "include": "#comments-hash-header" },
+        { "include": "#comments-semicolon" },
+        { "include": "#canape-commands" },
+        { "include": "#expected-ini-patterns" },
+        { "include": "#keywords-values" },
+        { "include": "#uds-service-values" },
+        { "include": "#if-block" }
+
+      ]
     }
-  ]
+  },
+  "fileTypes": ["uds.template"],
+  "uuid": "d0f1e432-7d39-11ee-b962-0242ac120002",
+  "foldingStartMarker": "(?x)^\\s*@IF\\b",
+  "foldingStopMarker": "(?x)^\\s*@ENDIF\\b"
 }

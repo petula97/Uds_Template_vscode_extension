@@ -2,7 +2,7 @@
   "name": "uds-template-keaywords",
   "displayName": "uds-template-keaywords",
   "description": "Provides keywords suggesstion from INI file",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.102.0"
   },
@@ -43,6 +43,12 @@
           "label": "UDS Template Light",
           "uiTheme": "vs",
           "path": "./themes/uds-template-light-color-theme.json"
+        }
+      ],
+      "snippets": [
+        {
+          "language": "uds-template",
+          "path": "./snippets/uds-template.code-snippets"
         }
       ]
   },

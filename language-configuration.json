@@ -2,6 +2,12 @@
     "comments": {
       "lineComment": "#"
     },
+    "folding": {
+    "markers": {
+      "start": "^\\s*@IF\\b",
+      "end": "^\\s*@ENDIF\\b"
+        }
+    },
     "brackets": [
       ["[", "]"],
       ["{", "}"],

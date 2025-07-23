@@ -1,0 +1,9 @@
+{
+  "UDS Example Command": {
+    "prefix": "prog",
+    "body": [
+      "!prog(${1:HEX_FILE} ${2:START_ADDRESS} ${3:SIZE} )"
+    ],
+    "description": "Snippet for a UDS template command"
+  }
+}
