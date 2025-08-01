@@ -2,7 +2,7 @@
   "name": "uds-template-keaywords",
   "displayName": "uds-template-keaywords",
   "description": "Provides keywords suggesstion from INI file",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.102.0"
   },

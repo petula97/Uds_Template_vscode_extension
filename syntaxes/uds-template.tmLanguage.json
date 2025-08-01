@@ -11,7 +11,8 @@
     { "include": "#expected-ini-patterns" },
     { "include": "#keywords-values" },
     { "include": "#uds-service-values" },
-    { "include": "#if-block" }
+    { "include": "#if-block" },
+    { "include": "#lauterlbach-commands" }
   ],
   "repository": {
     "comments-hash": {
@@ -123,8 +124,17 @@
         { "include": "#expected-ini-patterns" },
         { "include": "#keywords-values" },
         { "include": "#uds-service-values" },
-        { "include": "#if-block" }
-
+        { "include": "#if-block" },
+        { "include": "#lauterlbach-commands" }
+      ]
+    },
+    "lauterbach-commands":{
+      "patterns": [
+        {
+          "name": "support.function.lauterbach.uds-template",
+          "match": "\\b(?:LOAD|RUN|BREAK|GO)\\b(?=\\()"
+        },
+        { "include": "#keywords-values" }
       ]
     }
   },
