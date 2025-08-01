@@ -72,7 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
 					{label: 'QUIT_ON_YIELD', detail: 'uchar / {0,1}', doc: 'Setting of tester behavior when yield() function. 1 means that the tester wakes the script immediately and continues with respect to cancel var value.'}
 					];
 					for (const key of setKey) {
-						const item = new vscode.CompletionItem(key.label, vscode.CompletionItemKind.Keyword);
+						const item = new vscode.CompletionItem(key.label, vscode.CompletionItemKind.Value);
 						
 						item.detail = key.detail;
 						item.documentation = new vscode.MarkdownString(key.doc);
@@ -133,7 +133,7 @@ export function activate(context: vscode.ExtensionContext) {
 					];
 
 					for (const cmd of trace32Commands) {
-					  const item = new vscode.CompletionItem(cmd.label, vscode.CompletionItemKind.Keyword);
+					  const item = new vscode.CompletionItem(cmd.label, vscode.CompletionItemKind.Function);
 					  item.detail = cmd.detail;
 					  item.documentation = new vscode.MarkdownString(cmd.doc);
 					  item.insertText = cmd.label;
