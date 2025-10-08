@@ -2,7 +2,7 @@
   "name": "uds-template-keaywords",
   "displayName": "uds-template-keaywords",
   "description": "Provides keywords suggesstion from INI file",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "engines": {
     "vscode": "^1.102.0"
   },
@@ -22,7 +22,7 @@
       {
         "id": "uds-template",
         "aliases": ["UDS Template", "uds-template"],
-        "extensions": [".uds.template"],
+        "extensions": [".uds.template", ".uds"],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -50,7 +50,30 @@
           "language": "uds-template",
           "path": "./snippets/uds-template.code-snippets"
         }
+      ],
+      "configuration":[
+        {
+          "properties": {
+            "uds-template.templatesFolder":{
+              "type": "array",
+              "default": ["TEMPLATES"],
+              "description": "List of folders (which contain ini files) relative to workspace root."
+            },
+            "uds-template.iniSections": {
+              "type": "array",
+              "items": {"type": "string"},
+              "default": ["common"],
+              "description": "List of section names to read from INI files (CASE SENSITIVE)."
+            },
+            "uds-template.iniGlob": {
+              "type": "string",
+              "default": "**/*.ini",
+              "description": "Glob pattern to find ini files inside the configured folders."
+            }
+          }
+        }
       ]
+      
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
