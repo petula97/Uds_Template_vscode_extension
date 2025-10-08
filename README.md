@@ -4,15 +4,16 @@ UDS template - main idea is to have complete highlites and snippets. The best fe
 
 ## Features
 
-* loading all ini files except "config.ini" from ./TEMPLATES/ folder.
+* loading all ini files except "config.ini" from configuration of the extension (workspace/user).
 
 ## Requirements
 
-No special requirements needed.
+* N/A
 
 ## Extension Settings
 
-* None
+* VARIANTS - filtering from ini
+* PATHs - load ini files
 
 ## Known Issues
 
