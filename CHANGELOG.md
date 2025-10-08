@@ -1,5 +1,9 @@
 # Change Log
 
++ V0.2.0 (08-10-2025)
++ add folding support for all section (if, elif, else, endif)
++ fixed case sensitivity
+
 + V0.1.5 (08-10-2025)
   + add setings for filtering specific variant from ini files
   + add support to load more then one path

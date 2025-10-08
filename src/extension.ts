@@ -3,7 +3,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 const ini = require('ini');
 
+import { UdsFoldingProvider } from './foldingProvider';
+import { debug } from 'console';
+
 export function activate(context: vscode.ExtensionContext) {
+    console.debug('Activating UDS Template extension…');
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) {
         return;
@@ -204,10 +208,10 @@ export function activate(context: vscode.ExtensionContext) {
 
                 if (lineText.startsWith('@')) {
                     const setKey = [
-                        {label: 'IF', detail: '', doc: 'test'},
-                        {label: 'ELIF', detail: '', doc: ''},
-                        {label: 'ELSE', detail: '', doc: ''},
-                        {label: 'ENDIF', detail: '', doc: ''}
+                        {label: 'if', detail: '', doc: 'test'},
+                        {label: 'elif', detail: '', doc: ''},
+                        {label: 'else', detail: '', doc: ''},
+                        {label: 'endif', detail: '', doc: ''}
                     ];
                     for (const key of setKey) {
                         const item = new vscode.CompletionItem(key.label, vscode.CompletionItemKind.Keyword);
@@ -221,8 +225,15 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
     );
-
     context.subscriptions.push(provider);
+
+
+    const foldingProvider = vscode.languages.registerFoldingRangeProvider(
+        { scheme: 'file', language: 'uds-template' },
+        new UdsFoldingProvider()
+        
+    );
+    context.subscriptions.push(foldingProvider);
 }
 
 export function deactivate() {}

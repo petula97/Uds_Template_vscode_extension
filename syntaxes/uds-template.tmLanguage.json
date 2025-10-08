@@ -95,25 +95,21 @@
       ]
     },
     "if-block": {
-      "begin": "^\\s*@IF\\b.*$",
+      "begin": "^\\s*(?i:@if)\\b.*$",
       "beginCaptures": {
-        "0": {
-          "name": "keyword.control.conditional.if.uds-template"
-        }
+        "0": { "name": "keyword.control.conditional.if.uds-template" }
       },
-      "end": "^\\s*@ENDIF\\b.*$",
+      "end": "^\\s*(?i:@endif)\\b.*$",
       "endCaptures": {
-        "0": {
-          "name": "keyword.control.conditional.endif.uds-template"
-        }
+        "0": { "name": "keyword.control.conditional.endif.uds-template" }
       },
       "patterns": [
         {
-          "match": "^\\s*@ELIF\\b.*$",
+          "match": "^\\s*(?i:@elif)\\b.*$",
           "name": "keyword.control.conditional.elif.uds-template"
         },
         {
-          "match": "^\\s*@ELSE\\b.*$",
+          "match": "^\\s*(?i:@else)\\b.*$",
           "name": "keyword.control.conditional.else.uds-template"
         },
         { "include": "#comments-hash" },
@@ -139,7 +135,6 @@
     }
   },
   "fileTypes": ["uds.template"],
-  "uuid": "d0f1e432-7d39-11ee-b962-0242ac120002",
-  "foldingStartMarker": "(?x)^\\s*@IF\\b",
-  "foldingStopMarker": "(?x)^\\s*@ENDIF\\b"
+  "uuid": "d0f1e432-7d39-11ee-b962-0242ac120002"
+
 }
