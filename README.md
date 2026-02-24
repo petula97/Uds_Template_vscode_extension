@@ -15,6 +15,28 @@ UDS template - main idea is to have complete highlites and snippets. The best fe
 * VARIANTS - filtering from ini
 * PATHs - load ini files
 
+## Conditional shading feature
+
+- The extension now shades inactive `@if/@elif/@else` blocks in grey when the condition compares `@(__VARIANT__)` against a variant that is not found in the loaded INI values.
+- INI values are loaded from the configured `uds-template.iniSections` and searched for simple token matches (split on `,`, `;` or whitespace).
+
+Note about INI formatting:
+
+- Only INI files are loaded from the configured template folders.
+- When a section entry contains multiple variants, the extension will only consider the first variant token in that entry for highlighting decisions; subsequent tokens in the same field are ignored for highlighting purposes.
+
+Example:
+
+@IF ('@(__VARIANT__)' == 'PT64')
+2101ff01 ;EXTENDED - shall be visible
+@elif ('@(__VARIANT__)' == 'EST90')
+2101ff01 ; shall be shaded
+@else
+2101ff01 ; shall be shaded
+@ENDIF
+
+If `PT64` appears among loaded INI values then the first block remains normal and the others are shaded.
+
 ## Known Issues
 
 Highlites of keywords in the UDS commands are not working properly.

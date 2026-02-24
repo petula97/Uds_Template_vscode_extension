@@ -16,5 +16,9 @@
   
 
 ## [Unreleased]
-
-- Initial release
+- 2026-02-24: v0.3.0
+  - Added conditional shading for `@if/@elif/@else` blocks driven by `uds-template.variant` setting or INI values.
+  - Rewrote branch parsing to correctly identify active branch and shade non-active bodies.
+  - Made INI variant matching case-insensitive and documented behavior in `README.md`.
+  - Added `build:vsix` npm script and updated packaging workflow.
+  - Updated `lessons.md` with rules to prevent regressions.

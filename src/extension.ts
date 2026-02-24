@@ -15,6 +15,11 @@ export function activate(context: vscode.ExtensionContext) {
     const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
     let statiscompletionItems: vscode.CompletionItem[] = [];
+    let iniValuesSet: Set<string> = new Set();
+    let inactiveDecoration = vscode.window.createTextEditorDecorationType({
+        opacity: '0.55',
+        color: '#808080'
+    });
 
     function getConfigFolders(): string[] {
         const cfg = vscode.workspace.getConfiguration('uds-template');
@@ -31,6 +36,13 @@ export function activate(context: vscode.ExtensionContext) {
         const cfg = vscode.workspace.getConfiguration('uds-template');
         const sections = cfg.get<string[]>('iniSections') || ['common'];
         return sections.map(s => s.toLowerCase());
+    }
+
+    function getConfigVariant(): string | undefined {
+        const cfg = vscode.workspace.getConfiguration('uds-template');
+        const v = cfg.get<string>('variant');
+        if (v && v.trim().length > 0) return v.trim();
+        return undefined;
     }
 
     function collectIniFilesRecursive(folderPath: string, out: string[]) {
@@ -55,6 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     function loadIniKeywords() {
         statiscompletionItems = [];
+        iniValuesSet = new Set();
         const folders = getConfigFolders();
         const sections = getConfigSections();
 
@@ -79,6 +92,13 @@ export function activate(context: vscode.ExtensionContext) {
                             item.detail = `[${section}] (${file})`;
                             item.documentation = `${key} = ${keys[key]}`;
                             statiscompletionItems.push(item);
+                            // collect values as potential variants (split common separators)
+                            try {
+                                const raw = String(keys[key]);
+                                raw.split(/[;,\s]+/).map(s => s.trim()).filter(Boolean).forEach(v => iniValuesSet.add(v.toLowerCase()));
+                            } catch (err) {
+                                // ignore
+                            }
                         }
                     }
                 }
@@ -103,6 +123,118 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }));
 
+    // --- Conditional shading logic ---
+    function isVariantPresent(variant: string) {
+        if (!variant) return false;
+        return iniValuesSet.has(variant.toLowerCase());
+    }
+
+    function parseVariantFromCondition(line: string): string | undefined {
+        // Only consider conditions that reference the special token @(__VARIANT__)
+        // Example: @IF ('@(__VARIANT__)' == 'PT64')
+        if (!/@\(__VARIANT__\)/.test(line)) return undefined;
+        // capture the RHS of equality e.g. == 'PT64' or == "PT64"
+        const m = line.match(/==\s*['"]([^'"]+)['"]/);
+        if (m) return m[1];
+        return undefined;
+    }
+
+    function updateConditionalDecorations(editor?: vscode.TextEditor) {
+        try {
+            const activeEditor = editor || vscode.window.activeTextEditor;
+            if (!activeEditor) return;
+            if (activeEditor.document.languageId !== 'uds-template') return;
+
+            const doc = activeEditor.document;
+            const rangesToShade: vscode.Range[] = [];
+
+            const regexIf = /^\s*@if\b/i;
+            const regexElif = /^\s*@elif\b/i;
+            const regexElse = /^\s*@else\b/i;
+            const regexEndif = /^\s*@endif\b/i;
+
+            // Collect a chain of branches starting at @if and ending at @endif
+            let chain: { startLine: number; type: string; isTrue: boolean; endLine?: number }[] | null = null;
+
+            for (let i = 0; i < doc.lineCount; i++) {
+                const line = doc.lineAt(i).text;
+
+                if (regexIf.test(line)) {
+                    // start new chain
+                    const variant = parseVariantFromCondition(line);
+                    const cfgVariant = getConfigVariant();
+                    const isTrue: boolean = variant ? (cfgVariant ? (variant.toLowerCase() === cfgVariant.toLowerCase()) : isVariantPresent(variant)) : false;
+                    chain = [{ startLine: i, type: 'if', isTrue }];
+                } else if ((regexElif.test(line) || regexElse.test(line)) && chain) {
+                    // close previous branch body
+                    const prev = chain[chain.length - 1];
+                    prev.endLine = i - 1;
+                    if (regexElif.test(line)) {
+                        const variant = parseVariantFromCondition(line);
+                        const cfgVariant = getConfigVariant();
+                        const isTrue: boolean = variant ? (cfgVariant ? (variant.toLowerCase() === cfgVariant.toLowerCase()) : isVariantPresent(variant)) : false;
+                        chain.push({ startLine: i, type: 'elif', isTrue });
+                    } else {
+                        // else has no condition; we'll mark true only if no earlier true
+                        chain.push({ startLine: i, type: 'else', isTrue: false });
+                    }
+                } else if (regexEndif.test(line) && chain) {
+                    // close last branch
+                    const prev = chain[chain.length - 1];
+                    prev.endLine = i - 1;
+
+                    // decide active branch: first branch with isTrue === true; if none, last 'else' (if present)
+                    let activeIndex = chain.findIndex(b => b.isTrue);
+                    if (activeIndex === -1) {
+                        for (let j = 0; j < chain.length; j++) if (chain[j].type === 'else') activeIndex = j;
+                    }
+
+                    // shade non-active branch bodies
+                    for (let j = 0; j < chain.length; j++) {
+                        const b = chain[j];
+                        if (typeof b.endLine === 'number' && b.endLine >= b.startLine + 1) {
+                            const bodyStart = b.startLine + 1;
+                            const bodyEnd = b.endLine;
+                            const isActive = (activeIndex === j);
+                            if (!isActive) {
+                                rangesToShade.push(new vscode.Range(bodyStart, 0, bodyEnd, doc.lineAt(bodyEnd).text.length));
+                            }
+                        }
+                    }
+
+                    // reset chain
+                    chain = null;
+                }
+            }
+
+            activeEditor.setDecorations(inactiveDecoration, rangesToShade);
+        } catch (err) {
+            console.error('Failed to update conditional decorations:', err);
+        }
+    }
+
+    function chainHasTrueBefore(chain: { start: number; type: string; isTrue: boolean }[]) {
+        if (chain.length <= 1) return false;
+        for (let i = 0; i < chain.length - 1; i++) if (chain[i].isTrue) return true;
+        return false;
+    }
+
+    // update decorations on editor change / document edit / ini reload
+    vscode.window.onDidChangeActiveTextEditor(editor => updateConditionalDecorations(editor), null, context.subscriptions);
+    vscode.workspace.onDidChangeTextDocument(e => {
+        if (vscode.window.activeTextEditor && e.document === vscode.window.activeTextEditor.document) {
+            updateConditionalDecorations(vscode.window.activeTextEditor);
+        }
+    }, null, context.subscriptions);
+    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(ev => {
+        if (ev.affectsConfiguration('uds-template.templatesFolder') || ev.affectsConfiguration('uds-template.iniSections')) {
+            updateConditionalDecorations();
+        }
+    }));
+
+    // also update once after initial load
+    setTimeout(() => updateConditionalDecorations(), 250);
+
     // optional command to force reload
     context.subscriptions.push(vscode.commands.registerCommand('uds-template.reloadIniKeywords', async () => {
         loadIniKeywords();
@@ -117,7 +249,7 @@ export function activate(context: vscode.ExtensionContext) {
                 const completionItems: vscode.CompletionItem[] = [...statiscompletionItems];
 
                 // CANape keywords
-                const keywords = ['!sleep', '!prog', '!echo', '!dialog', '!baud', '!sa', '!repair', '!testerp', '!canid', '!pcheck', '!yield', '!suppress', '!set', '!batch', '!append', '!exit', '!auth'];
+                const keywords = ['!sleep', '!prog', '!echo', '!dialog', '!baud', '!sa', '!repair', '!testerp', '!canid', '!pcheck', '!yield', '!suppress', '!set', '!batch', '!append', '!exit', '!auth', '!baud'];
                 for (const keyword of keywords) {
                     const item = new vscode.CompletionItem(keyword, vscode.CompletionItemKind.Function);
                     item.detail = 'CANape Script command';
@@ -208,10 +340,11 @@ export function activate(context: vscode.ExtensionContext) {
 
                 if (lineText.startsWith('@')) {
                     const setKey = [
-                        {label: 'if', detail: '', doc: 'test'},
+                        {label: 'if', detail: '', doc: 'Start of statement'},
                         {label: 'elif', detail: '', doc: ''},
                         {label: 'else', detail: '', doc: ''},
-                        {label: 'endif', detail: '', doc: ''}
+                            {label: 'endif', detail: '', doc: 'End of statement'},
+                            {label: 'error', detail: '', doc: 'ERROR + comment'}
                     ];
                     for (const key of setKey) {
                         const item = new vscode.CompletionItem(key.label, vscode.CompletionItemKind.Keyword);
