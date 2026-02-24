@@ -343,8 +343,8 @@ export function activate(context: vscode.ExtensionContext) {
                         {label: 'if', detail: '', doc: 'Start of statement'},
                         {label: 'elif', detail: '', doc: ''},
                         {label: 'else', detail: '', doc: ''},
-                            {label: 'endif', detail: '', doc: 'End of statement'},
-                            {label: 'error', detail: '', doc: 'ERROR + comment'}
+                        {label: 'endif', detail: '', doc: 'End of statement'}
+                        {label: 'error', detail: '', doc: 'ERROR + comment'}
                     ];
                     for (const key of setKey) {
                         const item = new vscode.CompletionItem(key.label, vscode.CompletionItemKind.Keyword);
