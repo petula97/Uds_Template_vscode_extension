@@ -2,7 +2,7 @@
   "name": "uds-template-keaywords",
   "displayName": "uds-template-keaywords",
   "description": "Provides keywords suggesstion from INI file",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "engines": {
     "vscode": "^1.102.0"
   },
@@ -70,6 +70,12 @@
               "default": "**/*.ini",
               "description": "Glob pattern to find ini files inside the configured folders."
             }
+            ,
+            "uds-template.variant": {
+              "type": "string",
+              "default": "",
+              "description": "Active variant name used for conditional highlighting (e.g. PT64). If empty, extension falls back to scanning INI values."
+            }
           }
         }
       ]
@@ -78,6 +84,7 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
+    "build:vsix": "npm run compile && npx vsce package",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
