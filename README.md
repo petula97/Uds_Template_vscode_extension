@@ -37,6 +37,14 @@ Example:
 
 If `PT64` appears among loaded INI values then the first block remains normal and the others are shaded.
 
+Update (2026-02-25): Complex boolean expressions in `@IF`/`@ELIF` are now supported. Conditions like
+
+```
+@ELIF ('@(__VARIANT__)' == 'PT64' or '@(__VARIANT__)' == 'EC5_BL')
+```
+
+will be evaluated correctly and the matching branch will remain active while other branches are shaded.
+
 ## Known Issues
 
 Highlites of keywords in the UDS commands are not working properly.
