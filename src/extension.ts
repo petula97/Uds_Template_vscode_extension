@@ -130,13 +130,83 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     function parseVariantFromCondition(line: string): string | undefined {
-        // Only consider conditions that reference the special token @(__VARIANT__)
-        // Example: @IF ('@(__VARIANT__)' == 'PT64')
+        // backward-compat: return first literal variant found (not used by new evaluator)
         if (!/@\(__VARIANT__\)/.test(line)) return undefined;
-        // capture the RHS of equality e.g. == 'PT64' or == "PT64"
-        const m = line.match(/==\s*['"]([^'"]+)['"]/);
+        const m = line.match(/==\s*['"]([^'\"]+)['"]/);
         if (m) return m[1];
         return undefined;
+    }
+
+    function evaluateCondition(line: string): boolean {
+        // Only handle expressions that reference @(__VARIANT__). If none, return false.
+        if (!/@\(__VARIANT__\)/.test(line)) return false;
+
+        const cfgVariant = getConfigVariant();
+
+        // Replace every comparison of the form @(__VARIANT__) == 'LITERAL' with true/false
+        const compRegex = /@\(__VARIANT__\)\s*==\s*['"]([^'\"]+)['"]/ig;
+        let expr = line.replace(compRegex, (_m: string, literal: string) => {
+            const match = cfgVariant ? (literal.toLowerCase() === cfgVariant.toLowerCase()) : isVariantPresent(literal);
+            return match ? ' true ' : ' false ';
+        });
+
+        // Remove leading directive token like @IF, @ELIF and surrounding parentheses
+        expr = expr.replace(/^\s*@(?:if|elif)\b/i, '');
+        expr = expr.replace(/^\s*\(/, '');
+        expr = expr.replace(/\)\s*$/, '');
+
+        // Normalize logical operators to lowercase words
+        expr = expr.replace(/\bOR\b/ig, ' or ');
+        expr = expr.replace(/\bAND\b/ig, ' and ');
+
+        // Now tokenise and evaluate a very small boolean grammar with tokens: true,false,(,),and,or
+        const tokens = expr.split(/(\s+|\(|\))/).map(t => t.trim()).filter(Boolean);
+
+        // Convert tokens to RPN using shunting-yard
+        const outQueue: string[] = [];
+        const opStack: string[] = [];
+        const precedence: { [op: string]: number } = { 'or': 1, 'and': 2 };
+
+        for (const tok of tokens) {
+            const lower = tok.toLowerCase();
+            if (lower === 'true' || lower === 'false') {
+                outQueue.push(lower);
+            } else if (lower === 'and' || lower === 'or') {
+                while (opStack.length > 0) {
+                    const top = opStack[opStack.length - 1];
+                    if ((top === 'and' || top === 'or') && precedence[top] >= precedence[lower]) {
+                        outQueue.push(opStack.pop() as string);
+                        continue;
+                    }
+                    break;
+                }
+                opStack.push(lower);
+            } else if (tok === '(') {
+                opStack.push(tok);
+            } else if (tok === ')') {
+                while (opStack.length > 0 && opStack[opStack.length - 1] !== '(') {
+                    outQueue.push(opStack.pop() as string);
+                }
+                if (opStack.length > 0 && opStack[opStack.length - 1] === '(') opStack.pop();
+            } else {
+                // ignore unknown tokens (e.g. comments) conservatively
+            }
+        }
+        while (opStack.length > 0) outQueue.push(opStack.pop() as string);
+
+        // Evaluate RPN
+        const evalStack: boolean[] = [];
+        for (const t of outQueue) {
+            if (t === 'true' || t === 'false') {
+                evalStack.push(t === 'true');
+            } else if (t === 'and' || t === 'or') {
+                const b = evalStack.pop();
+                const a = evalStack.pop();
+                if (typeof a === 'undefined' || typeof b === 'undefined') return false;
+                evalStack.push(t === 'and' ? (a && b) : (a || b));
+            }
+        }
+        return evalStack.length === 1 ? evalStack[0] : false;
     }
 
     function updateConditionalDecorations(editor?: vscode.TextEditor) {
@@ -161,18 +231,14 @@ export function activate(context: vscode.ExtensionContext) {
 
                 if (regexIf.test(line)) {
                     // start new chain
-                    const variant = parseVariantFromCondition(line);
-                    const cfgVariant = getConfigVariant();
-                    const isTrue: boolean = variant ? (cfgVariant ? (variant.toLowerCase() === cfgVariant.toLowerCase()) : isVariantPresent(variant)) : false;
+                    const isTrue: boolean = evaluateCondition(line);
                     chain = [{ startLine: i, type: 'if', isTrue }];
                 } else if ((regexElif.test(line) || regexElse.test(line)) && chain) {
                     // close previous branch body
                     const prev = chain[chain.length - 1];
                     prev.endLine = i - 1;
                     if (regexElif.test(line)) {
-                        const variant = parseVariantFromCondition(line);
-                        const cfgVariant = getConfigVariant();
-                        const isTrue: boolean = variant ? (cfgVariant ? (variant.toLowerCase() === cfgVariant.toLowerCase()) : isVariantPresent(variant)) : false;
+                        const isTrue: boolean = evaluateCondition(line);
                         chain.push({ startLine: i, type: 'elif', isTrue });
                     } else {
                         // else has no condition; we'll mark true only if no earlier true
