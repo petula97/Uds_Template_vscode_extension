@@ -45,6 +45,10 @@ Update (2026-02-25): Complex boolean expressions in `@IF`/`@ELIF` are now suppor
 
 will be evaluated correctly and the matching branch will remain active while other branches are shaded.
 
+Release 0.3.1 (2026-02-25):
+- Fix: support `!=` in conditional expressions and correct evaluation of mixed `and`/`or` expressions when referencing `@(__VARIANT__)`.
+- Docs: updated README and lessons with parsing details.
+
 ## Known Issues
 
 Highlites of keywords in the UDS commands are not working properly.
