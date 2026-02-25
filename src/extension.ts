@@ -143,10 +143,12 @@ export function activate(context: vscode.ExtensionContext) {
 
         const cfgVariant = getConfigVariant();
 
-        // Replace every comparison of the form @(__VARIANT__) == 'LITERAL' with true/false
-        const compRegex = /@\(__VARIANT__\)\s*==\s*['"]([^'\"]+)['"]/ig;
-        let expr = line.replace(compRegex, (_m: string, literal: string) => {
-            const match = cfgVariant ? (literal.toLowerCase() === cfgVariant.toLowerCase()) : isVariantPresent(literal);
+        // Replace every comparison of the form @(__VARIANT__) == 'LITERAL' or != with true/false
+        // allow the @(__VARIANT__) token to optionally be wrapped in quotes in the source
+        const compRegex = /['"]?@\(__VARIANT__\)['"]?\s*(==|!=)\s*['"]([^'\"]+)['"]/ig;
+        let expr = line.replace(compRegex, (_m: string, op: string, literal: string) => {
+            let match = cfgVariant ? (literal.toLowerCase() === cfgVariant.toLowerCase()) : isVariantPresent(literal);
+            if (op === '!=') match = !match;
             return match ? ' true ' : ' false ';
         });
 
@@ -315,7 +317,7 @@ export function activate(context: vscode.ExtensionContext) {
                 const completionItems: vscode.CompletionItem[] = [...statiscompletionItems];
 
                 // CANape keywords
-                const keywords = ['!sleep', '!prog', '!echo', '!dialog', '!baud', '!sa', '!repair', '!testerp', '!canid', '!pcheck', '!yield', '!suppress', '!set', '!batch', '!append', '!exit', '!auth', '!baud'];
+                const keywords = ['!sleep', '!prog', '!echo', '!dialog', '!baud', '!sa', '!repair', '!testerp', '!canid', '!pcheck', '!yield', '!suppress', '!set', '!batch', '!append', '!exit', '!auth', '!baud', '!send'];
                 for (const keyword of keywords) {
                     const item = new vscode.CompletionItem(keyword, vscode.CompletionItemKind.Function);
                     item.detail = 'CANape Script command';
