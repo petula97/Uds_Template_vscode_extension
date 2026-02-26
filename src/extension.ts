@@ -226,7 +226,8 @@ export function activate(context: vscode.ExtensionContext) {
             const regexEndif = /^\s*@endif\b/i;
 
             // Collect a chain of branches starting at @if and ending at @endif
-            let chain: { startLine: number; type: string; isTrue: boolean; endLine?: number }[] | null = null;
+            let chain: { startLine: number; type: string; isTrue: boolean; endLine?: number; hasVariant?: boolean }[] | null = null;
+            let chainHasVariant = false;
 
             for (let i = 0; i < doc.lineCount; i++) {
                 const line = doc.lineAt(i).text;
@@ -234,17 +235,21 @@ export function activate(context: vscode.ExtensionContext) {
                 if (regexIf.test(line)) {
                     // start new chain
                     const isTrue: boolean = evaluateCondition(line);
-                    chain = [{ startLine: i, type: 'if', isTrue }];
+                    const hasVar = /@\(__VARIANT__\)/.test(line);
+                    chainHasVariant = hasVar;
+                    chain = [{ startLine: i, type: 'if', isTrue, hasVariant: hasVar }];
                 } else if ((regexElif.test(line) || regexElse.test(line)) && chain) {
                     // close previous branch body
                     const prev = chain[chain.length - 1];
                     prev.endLine = i - 1;
                     if (regexElif.test(line)) {
                         const isTrue: boolean = evaluateCondition(line);
-                        chain.push({ startLine: i, type: 'elif', isTrue });
+                        const hasVar = /@\(__VARIANT__\)/.test(line);
+                        chainHasVariant = chainHasVariant || hasVar;
+                        chain.push({ startLine: i, type: 'elif', isTrue, hasVariant: hasVar });
                     } else {
                         // else has no condition; we'll mark true only if no earlier true
-                        chain.push({ startLine: i, type: 'else', isTrue: false });
+                        chain.push({ startLine: i, type: 'else', isTrue: false, hasVariant: false });
                     }
                 } else if (regexEndif.test(line) && chain) {
                     // close last branch
@@ -257,21 +262,24 @@ export function activate(context: vscode.ExtensionContext) {
                         for (let j = 0; j < chain.length; j++) if (chain[j].type === 'else') activeIndex = j;
                     }
 
-                    // shade non-active branch bodies
-                    for (let j = 0; j < chain.length; j++) {
-                        const b = chain[j];
-                        if (typeof b.endLine === 'number' && b.endLine >= b.startLine + 1) {
-                            const bodyStart = b.startLine + 1;
-                            const bodyEnd = b.endLine;
-                            const isActive = (activeIndex === j);
-                            if (!isActive) {
-                                rangesToShade.push(new vscode.Range(bodyStart, 0, bodyEnd, doc.lineAt(bodyEnd).text.length));
+                    // shade non-active branch bodies only if the chain contains any @(__VARIANT__) tests
+                    if (chainHasVariant) {
+                        for (let j = 0; j < chain.length; j++) {
+                            const b = chain[j];
+                            if (typeof b.endLine === 'number' && b.endLine >= b.startLine + 1) {
+                                const bodyStart = b.startLine + 1;
+                                const bodyEnd = b.endLine;
+                                const isActive = (activeIndex === j);
+                                if (!isActive) {
+                                    rangesToShade.push(new vscode.Range(bodyStart, 0, bodyEnd, doc.lineAt(bodyEnd).text.length));
+                                }
                             }
                         }
                     }
 
                     // reset chain
                     chain = null;
+                    chainHasVariant = false;
                 }
             }
 
