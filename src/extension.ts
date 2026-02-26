@@ -16,9 +16,14 @@ export function activate(context: vscode.ExtensionContext) {
 
     let statiscompletionItems: vscode.CompletionItem[] = [];
     let iniValuesSet: Set<string> = new Set();
+    let iniKeysMap: Map<string,string> = new Map();
     let inactiveDecoration = vscode.window.createTextEditorDecorationType({
         opacity: '0.55',
         color: '#808080'
+    });
+    let missingVariantDecoration = vscode.window.createTextEditorDecorationType({
+        color: '#ff0000',
+        fontWeight: 'bold'
     });
 
     function getConfigFolders(): string[] {
@@ -96,6 +101,8 @@ export function activate(context: vscode.ExtensionContext) {
                             try {
                                 const raw = String(keys[key]);
                                 raw.split(/[;,\s]+/).map(s => s.trim()).filter(Boolean).forEach(v => iniValuesSet.add(v.toLowerCase()));
+                                    // store key -> value mapping for variable lookups like @(SECBOOT)
+                                    iniKeysMap.set(key.toLowerCase(), String(keys[key]));
                             } catch (err) {
                                 // ignore
                             }
@@ -137,21 +144,77 @@ export function activate(context: vscode.ExtensionContext) {
         return undefined;
     }
 
-    function evaluateCondition(line: string): boolean {
-        // Only handle expressions that reference @(__VARIANT__). If none, return false.
-        if (!/@\(__VARIANT__\)/.test(line)) return false;
-
+    function evaluateCondition(line: string, doc?: vscode.TextDocument, lineIndex?: number, missingRanges?: vscode.Range[]): { result: boolean; hasVariant: boolean } {
+        // Handle expressions that reference @(__VARIANT__) or other variables @(KEY).
         const cfgVariant = getConfigVariant();
 
-        // Replace every comparison of the form @(__VARIANT__) == 'LITERAL' or != with true/false
-        // allow the @(__VARIANT__) token to optionally be wrapped in quotes in the source
-        const compRegex = /['"]?@\(__VARIANT__\)['"]?\s*(==|!=)\s*['"]([^'\"]+)['"]/ig;
-        let expr = line.replace(compRegex, (_m: string, op: string, literal: string) => {
-            let match = cfgVariant ? (literal.toLowerCase() === cfgVariant.toLowerCase()) : isVariantPresent(literal);
-            if (op === '!=') match = !match;
-            return match ? ' true ' : ' false ';
+        let hasVariant = false;
+
+        // Match comparisons like @(KEY) == 'LIT' or @(__VARIANT__) != "LIT"
+            const compRegex = /[\'\"]?@\((__VARIANT__|[^)]+)\)[\'\"]?\s*(==|!=)\s*[\'\"]([^\'\"]+)[\'\"]/ig;
+
+        let expr = line.replace(compRegex, function (match, key, op, literal, offset) {
+            const keyName = String(key).trim();
+            const keyLower = keyName.toLowerCase();
+
+            // special handling for __VARIANT__ token
+            if (keyLower === '__variant__') {
+                hasVariant = true;
+                let matchVal = cfgVariant ? (literal.toLowerCase() === cfgVariant.toLowerCase()) : isVariantPresent(literal);
+                if (op === '!=') matchVal = !matchVal;
+                return matchVal ? ' true ' : ' false ';
+            }
+
+            // other variables: lookup key in loaded INI keys
+            if (iniKeysMap.has(keyLower)) {
+                hasVariant = true;
+                const val = (iniKeysMap.get(keyLower) || '').trim();
+                let matchVal = val.toLowerCase() === literal.toLowerCase();
+                if (op === '!=') matchVal = !matchVal;
+                return matchVal ? ' true ' : ' false ';
+            }
+
+            // unknown key -> mark missing (highlight variable name) and treat comparison as false
+            if (missingRanges && typeof lineIndex === 'number' && typeof offset === 'number') {
+                const matchStart = offset as number;
+                const idxInMatch = match.indexOf(keyName);
+                const pos = idxInMatch >= 0 ? matchStart + idxInMatch : line.indexOf(keyName, matchStart);
+                if (pos >= 0) {
+                    missingRanges.push(new vscode.Range(lineIndex, pos, lineIndex, pos + keyName.length));
+                }
+            }
+            return ' false ';
         });
 
+            // Then, handle standalone truthy checks like @IF (@(ALFID)) -> true if the INI key value === '1'
+            const unaryRegex = /[\'\"]?@\((__VARIANT__|[^)]+)\)[\'\"]?(?!\s*(?:==|!=))/ig;
+            expr = expr.replace(unaryRegex, function (match, key, offset) {
+                const keyName = String(key).trim();
+                const keyLower = keyName.toLowerCase();
+
+                if (keyLower === '__variant__') {
+                    // presence of configured variant is considered truthy
+                    const present = !!cfgVariant || iniValuesSet.size > 0;
+                    if (present) hasVariant = true;
+                    return present ? ' true ' : ' false ';
+                }
+
+                if (iniKeysMap.has(keyLower)) {
+                    hasVariant = true;
+                    const val = (iniKeysMap.get(keyLower) || '').trim();
+                    const truthy = val === '1';
+                    return truthy ? ' true ' : ' false ';
+                }
+
+                // unknown key -> mark missing
+                if (missingRanges && typeof lineIndex === 'number' && typeof offset === 'number') {
+                    const matchStart = offset as number;
+                    const idxInMatch = match.indexOf(keyName);
+                    const pos = idxInMatch >= 0 ? matchStart + idxInMatch : line.indexOf(keyName, matchStart);
+                    if (pos >= 0) missingRanges.push(new vscode.Range(lineIndex, pos, lineIndex, pos + keyName.length));
+                }
+                return ' false ';
+            });
         // Remove leading directive token like @IF, @ELIF and surrounding parentheses
         expr = expr.replace(/^\s*@(?:if|elif)\b/i, '');
         expr = expr.replace(/^\s*\(/, '');
@@ -204,11 +267,11 @@ export function activate(context: vscode.ExtensionContext) {
             } else if (t === 'and' || t === 'or') {
                 const b = evalStack.pop();
                 const a = evalStack.pop();
-                if (typeof a === 'undefined' || typeof b === 'undefined') return false;
+                if (typeof a === 'undefined' || typeof b === 'undefined') return { result: false, hasVariant };
                 evalStack.push(t === 'and' ? (a && b) : (a || b));
             }
         }
-        return evalStack.length === 1 ? evalStack[0] : false;
+        return { result: evalStack.length === 1 ? evalStack[0] : false, hasVariant };
     }
 
     function updateConditionalDecorations(editor?: vscode.TextEditor) {
@@ -219,6 +282,8 @@ export function activate(context: vscode.ExtensionContext) {
 
             const doc = activeEditor.document;
             const rangesToShade: vscode.Range[] = [];
+            const missingVariantRanges: vscode.Range[] = [];
+            const cfgVariant = getConfigVariant();
 
             const regexIf = /^\s*@if\b/i;
             const regexElif = /^\s*@elif\b/i;
@@ -232,21 +297,23 @@ export function activate(context: vscode.ExtensionContext) {
             for (let i = 0; i < doc.lineCount; i++) {
                 const line = doc.lineAt(i).text;
 
-                if (regexIf.test(line)) {
-                    // start new chain
-                    const isTrue: boolean = evaluateCondition(line);
-                    const hasVar = /@\(__VARIANT__\)/.test(line);
-                    chainHasVariant = hasVar;
-                    chain = [{ startLine: i, type: 'if', isTrue, hasVariant: hasVar }];
+                    if (regexIf.test(line)) {
+                        // start new chain
+                        const evalRes = evaluateCondition(line, doc, i, missingVariantRanges);
+                        const isTrue: boolean = evalRes.result;
+                        const hasVarToken = /@\(__VARIANT__\)/.test(line);
+                        chainHasVariant = evalRes.hasVariant || hasVarToken;
+                        chain = [{ startLine: i, type: 'if', isTrue, hasVariant: hasVarToken }];
                 } else if ((regexElif.test(line) || regexElse.test(line)) && chain) {
                     // close previous branch body
                     const prev = chain[chain.length - 1];
                     prev.endLine = i - 1;
                     if (regexElif.test(line)) {
-                        const isTrue: boolean = evaluateCondition(line);
-                        const hasVar = /@\(__VARIANT__\)/.test(line);
-                        chainHasVariant = chainHasVariant || hasVar;
-                        chain.push({ startLine: i, type: 'elif', isTrue, hasVariant: hasVar });
+                        const evalRes = evaluateCondition(line, doc, i, missingVariantRanges);
+                        const isTrue: boolean = evalRes.result;
+                        const hasVarToken = /@\(__VARIANT__\)/.test(line);
+                        chainHasVariant = chainHasVariant || evalRes.hasVariant || hasVarToken;
+                        chain.push({ startLine: i, type: 'elif', isTrue, hasVariant: hasVarToken });
                     } else {
                         // else has no condition; we'll mark true only if no earlier true
                         chain.push({ startLine: i, type: 'else', isTrue: false, hasVariant: false });
@@ -262,7 +329,7 @@ export function activate(context: vscode.ExtensionContext) {
                         for (let j = 0; j < chain.length; j++) if (chain[j].type === 'else') activeIndex = j;
                     }
 
-                    // shade non-active branch bodies only if the chain contains any @(__VARIANT__) tests
+                    // shade non-active branch bodies only if the chain contains any @(__VARIANT__) tests or references present INI keywords
                     if (chainHasVariant) {
                         for (let j = 0; j < chain.length; j++) {
                             const b = chain[j];
@@ -284,6 +351,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             activeEditor.setDecorations(inactiveDecoration, rangesToShade);
+            activeEditor.setDecorations(missingVariantDecoration, missingVariantRanges);
         } catch (err) {
             console.error('Failed to update conditional decorations:', err);
         }

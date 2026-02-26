@@ -49,6 +49,11 @@ Release 0.3.1 (2026-02-25):
 - Fix: support `!=` in conditional expressions and correct evaluation of mixed `and`/`or` expressions when referencing `@(__VARIANT__)`.
 - Docs: updated README and lessons with parsing details.
 
+Release 0.3.2 (2026-02-26):
+- Fix: evaluate `@(KEY)` standalone boolean checks (treat INI value `'1'` as true, `'0'` as false).
+- Fix: use loaded INI keys for conditional shading and highlight missing `@(...)` keys in bold red.
+- Enhancement: added `!send`, `!auth`, `!echo` and other CANape commands to grammar highlighting.
+
 ## Known Issues
 
 Highlites of keywords in the UDS commands are not working properly.

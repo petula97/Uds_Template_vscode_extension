@@ -2,7 +2,12 @@
   "name": "uds-template-keaywords",
   "displayName": "uds-template-keaywords",
   "description": "Provides keywords suggesstion from INI file",
-  "version": "0.3.1",
+  "version": "0.3.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/petula97/Uds_Template_vscode_extension.git"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.102.0"
   },

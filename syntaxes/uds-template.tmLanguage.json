@@ -55,7 +55,7 @@
       "patterns": [
         {
           "name": "support.function.canape.uds-template",
-          "match": "!\\b(prog|set|baud|activate|canalyzer|canid|sa|batch|auth|sleep|append)\\b(?=\\()"
+          "match": "!\\b(prog|send|sleep|echo|dialog|baud|sa|repair|testerp|canid|pcheck|yield|suppress|set|batch|append|exit|auth|activate|canalyzer|append)\\b(?=\\()"
         },
         { "include": "#keywords-values" }
       ]

@@ -8,9 +8,9 @@
 	},
 	// Turn off tsc task auto detection since we have the necessary tasks as npm scripts
 	"typescript.tsc.autoDetect": "off",
-	"uds-template.variant": "EST90",
+	"uds-template.variant": "EC5_BL",
 	"uds-template.iniSections": [
 		"common",
-		"PT64_BL"
+		"EST90"
 	]
 }
