@@ -13,3 +13,5 @@ New lessons:
 - Keep parsing logic of user-facing tokens strict and aligned with examples; update README examples when token format changes and add unit-like tests for sample files.
 - When changing parsing behavior, write a small sample file and run a packaged build to validate the exact highlighting behavior in a real VS Code instance.
 - Avoid persisting transient analysis results into workspaceState unless they must survive reloads; use runtime collections for matching tests.
+
+- When parsing conditional expressions that reference `@(__VARIANT__)`, support full boolean expressions (`and` / `or`) instead of taking the first equality found. Write a small safe evaluator, add sample files demonstrating complex conditions, and include a test case to prevent regressions.

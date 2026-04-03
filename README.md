@@ -1,59 +1,70 @@
 # uds-template-keaywords README
 
-UDS template - main idea is to have complete highlites and snippets. The best feature is loading ini files from \TEMPLATES\ folder if the workspace is setup to git repository root.
+UDS template extension for VS Code. The main idea is to provide complete highlights and snippets. The standout feature is the ability to automatically load `.ini` files from the `\TEMPLATES\` folder when the workspace is set up to a Git repository root.
 
-## Features
+---
 
-* loading all ini files except "config.ini" from configuration of the extension (workspace/user).
+## 🌟 Features
 
-## Requirements
+* Loads all `.ini` files (except `config.ini`) from the workspace or user configuration of the extension.
+
+## 🛠️ Requirements
 
 * N/A
 
-## Extension Settings
+## ⚙️ Extension Settings
 
-* VARIANTS - filtering from ini
-* PATHs - load ini files
+* **VARIANTS**: Used for filtering from loaded INI files.
+* **PATHs**: Defines paths to load the INI files from.
 
-## Conditional shading feature
+---
 
-- The extension now shades inactive `@if/@elif/@else` blocks in grey when the condition compares `@(__VARIANT__)` against a variant that is not found in the loaded INI values.
-- INI values are loaded from the configured `uds-template.iniSections` and searched for simple token matches (split on `,`, `;` or whitespace).
+## 🌓 Conditional Shading Feature
 
-Note about INI formatting:
+The extension dynamically shades inactive `@if`, `@elif`, and `@else` blocks in grey when a condition compares `@(__VARIANT__)` against a variant that is not found in the loaded INI values.
 
-- Only INI files are loaded from the configured template folders.
-- When a section entry contains multiple variants, the extension will only consider the first variant token in that entry for highlighting decisions; subsequent tokens in the same field are ignored for highlighting purposes.
+### How INI files are processed:
+* INI values are loaded from the configured `uds-template.iniSections`.
+* They are searched for simple token matches (split on commas `,`, semicolons `;`, or whitespace).
+* **Note about INI formatting:** Only INI files are loaded from the configured template folders. When a section entry contains multiple variants, the extension will only consider the **first** variant token in that entry for highlighting decisions; subsequent tokens in the same field are ignored.
 
-Example:
+### Example:
 
-@IF ('@(__VARIANT__)' == 'PT64')
-2101ff01 ;EXTENDED - shall be visible
-@elif ('@(__VARIANT__)' == 'EST90')
-2101ff01 ; shall be shaded
-@else
-2101ff01 ; shall be shaded
-@ENDIF
+    @IF ('@(__VARIANT__)' == 'PT64')
+        2101ff01 ;EXTENDED - shall be visible
+    @elif ('@(__VARIANT__)' == 'EST90')
+        2101ff01 ; shall be shaded
+    @else
+        2101ff01 ; shall be shaded
+    @ENDIF
 
-If `PT64` appears among loaded INI values then the first block remains normal and the others are shaded.
+*If `PT64` appears among loaded INI values, the first block remains normal and the others are shaded.*
 
-## Known Issues
+### Updates to this feature:
+* **Update (2026-02-25):** Complex boolean expressions in `@IF` and `@ELIF` are now fully supported. Conditions like `@ELIF ('@(__VARIANT__)' == 'PT64' or '@(__VARIANT__)' == 'EC5_BL')` will be evaluated correctly, keeping the matching branch active while others are shaded.
 
-Highlites of keywords in the UDS commands are not working properly.
+---
 
-## Release Notes
+## 🐛 Known Issues
 
+* None
 
+---
 
-### 1.0.0
+## 📜 Release Notes
 
-Initial release of - not released yet.
+### Release V1.0.0
+* **Fix:** Resolved small bugs with evaluation and the conditional shading feature.
+* **Removed:** Custom themes; reverted to default themes from VS Code.
+* **Add:** Whisper for Lauterbach commands (currently with Czech translation—this will be changed to English in the future).
 
-## Following extension guidelines
+---
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+## 🤝 Following Extension Guidelines
+
 
 * [Extension Guidelines](https://github.com/petula97/Uds_Template_vscode_extension)
 
+---
 
 **Enjoy!**

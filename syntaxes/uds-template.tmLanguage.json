@@ -12,7 +12,7 @@
     { "include": "#keywords-values" },
     { "include": "#uds-service-values" },
     { "include": "#if-block" },
-    { "include": "#lauterlbach-commands" }
+    { "include": "#lauterbach-commands" }
   ],
   "repository": {
     "comments-hash": {
@@ -55,7 +55,7 @@
       "patterns": [
         {
           "name": "support.function.canape.uds-template",
-          "match": "!\\b(prog|set|baud|activate|canalyzer|canid|sa|batch|auth|sleep|append)\\b(?=\\()"
+          "match": "!\\b(prog|send|sleep|echo|dialog|baud|sa|repair|testerp|canid|pcheck|yield|suppress|set|batch|append|exit|auth|activate|canalyzer|append)\\b(?=\\()"
         },
         { "include": "#keywords-values" }
       ]
@@ -121,14 +121,22 @@
         { "include": "#keywords-values" },
         { "include": "#uds-service-values" },
         { "include": "#if-block" },
-        { "include": "#lauterlbach-commands" }
+        { "include": "#lauterbach-commands" }
       ]
     },
     "lauterbach-commands":{
       "patterns": [
         {
-          "name": "support.function.lauterbach.uds-template",
-          "match": "\\b(?:LOAD|RUN|BREAK|GO)\\b(?=\\()"
+            "name": "support.function.lauterbach.uds-template",
+            "match": "\\b(?:SYStem|FLASH|Data|Break|Go|Step|HALT|WAIT|Register|Var|sYmbol|RUNTIME|PER|PRINT|AREA|DO|ENDDO|GOSUB|RETURN|ENTRY|PORST|EPORST)(?:\\.[A-Za-z]+)*\\b"
+        },
+        {
+            "name": "constant.language.lauterbach.option.uds-template",
+            "match": "\\/[A-Z][A-Z0-9]+"
+        },
+        {
+            "name": "keyword.operator.lauterbach.macro.uds-template",
+            "match": "%%(?:LE|BE|LONG|WORD|BYTE)\\b"
         },
         { "include": "#keywords-values" }
       ]
